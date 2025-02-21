@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MEDIASOUP_URL=${MEDIASOUP_URL:-ws://localhost:3000}
+    ports:
+      - "8010:8010"
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  mediasoup:
+    image: mediasoup/mediasoup-demo:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - MEDIASOUP_ANNOUNCED_IP=${MEDIASOUP_ANNOUNCED_IP:-localhost} 

@@ -1,0 +1,87 @@
+//webrtc.html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digital Human Streaming</title>
+  <style>
+    button {
+      padding: 8px 16px;
+    }
+    video {
+      width: 100%;
+    }
+    .option {
+      margin-bottom: 8px;
+    }
+    #media {
+      max-width: 1280px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Digital Human Streaming Interface</h1>
+  
+  <!-- Option to include a STUN server -->
+  <div class="option">
+    <input id="use-stun" type="checkbox">
+    <label for="use-stun">Use STUN server</label>
+  </div>
+  
+  <!-- Connection Controls -->
+  <button id="start" onclick="startConnection()">Start</button>
+  <button id="stop" style="display: none;" onclick="stopConnection()">Stop</button>
+  <br>
+  
+  <!-- Recording Controls -->
+  <button id="btn_start_record">Start Recording</button>
+  <button id="btn_stop_record" disabled>Stop Recording</button>
+  <br>
+  
+  <!-- Hidden field for session ID -->
+  <input type="hidden" id="sessionid" value="0">
+  
+  <!-- Chat Form -->
+  <form id="echo-form">
+    <p>Input text:</p>
+    <textarea id="message" style="width:600px;height:50px;">test</textarea>
+    <button type="submit">Send</button>
+  </form>
+  
+  <!-- Div to display LLM replies -->
+  <div id="responseArea"></div>
+  
+  <!-- Media Area -->
+  <div id="media">
+    <h2>Media</h2>
+    <audio id="audio" autoplay></audio>
+    <video id="video" autoplay playsinline style="width:600px;"></video>
+  </div>
+  
+  <!-- Load jQuery from a CDN -->
+  <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <!-- Load our client-side JavaScript -->
+  <script src="client.js"></script>
+  
+  <!-- Poll the /llm_reply endpoint every 3 seconds and update only if the reply changes -->
+  <script type="text/javascript">
+    var lastReply = "";
+    setInterval(function() {
+      $.ajax({
+        url: "/llm_reply",
+        type: "GET",
+        success: function(resp) {
+          if (resp.reply && resp.reply !== lastReply) {
+            $("#responseArea").append("<p><strong>LLM reply:</strong> " + resp.reply + "</p>");
+            lastReply = resp.reply;
+          }
+        },
+        error: function(err) {
+          console.error("Error fetching LLM reply:", err);
+        }
+      });
+    }, 3000);
+  </script>
+</body>
+</html>

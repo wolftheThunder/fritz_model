@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -7,7 +6,7 @@ import os
 import random
 import argparse
 import threading
-import copy  # NEW: used for deep copying the opt object
+import copy 
 import torch.multiprocessing as mp
 
 from aiohttp import web
@@ -18,12 +17,11 @@ from aiortc.rtcrtpsender import RTCRtpSender
 import openai
 
 from webrtc import HumanPlayer, MediasoupHumanPlayer
+from tensor_rt import TensorRTModel  # Import TensorRT model
 
-# Global storage for active containers and RTCPeerConnections.
-nerfreals = {}  # { session_id (int): container instance }
-pcs = set()     # Active RTCPeerConnections
+nerfreals = {}  
+pcs = set()     
 
-# Global variable: dictionary mapping session IDs (as strings) to their latest LLM reply.
 latest_llm_reply = {}
 
 def llm_response(message, nerfreal):
@@ -35,7 +33,7 @@ def llm_response(message, nerfreal):
     openai.api_key = os.getenv("OPENAI_API_KEY")
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Change to "gpt-4" if desired.
+            model="gpt-3.5-turbo",  
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": message}
@@ -89,6 +87,10 @@ def build_nerfreal(sessionid):
         avatar_instance = load_avatar("avator_1")
         warm_up(session_opt.max_session, avatar_instance, 160)
         nerfreal = LightReal(session_opt, model_instance, avatar_instance)
+    elif session_opt.model.lower() == 'tensorrt':
+        # Initialize TensorRT model
+        model_instance = TensorRTModel(session_opt.model_path)
+        nerfreal = TensorRTModel(session_opt, model_instance)
     else:
         raise ValueError("Unknown model: " + session_opt.model)
     return nerfreal
@@ -219,7 +221,7 @@ if __name__ == "__main__":
     mp.set_start_method("spawn")
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="wav2lip",
-                        help="Model type: ernerf, musetalk, wav2lip, ultralight")
+                        help="Model type: ernerf, musetalk, wav2lip, ultralight, tensorrt")
     parser.add_argument("--transport", type=str, default="mediasoup",
                         help="Transport: rtmp, rtcpush, mediasoup, aiortc")
     parser.add_argument("--mediasoup_url", type=str, default="ws://localhost:3000",
@@ -263,6 +265,9 @@ if __name__ == "__main__":
         model = load_model(opt)
         avatar = load_avatar("avator_1")
         warm_up(opt.max_session, avatar, 160)
+    elif opt.model.lower() == "tensorrt":
+        from tensor_rt import TensorRTModel  # Ensure TensorRT is imported
+        model = TensorRTModel(opt.model_path)  # Initialize TensorRT model
     else:
         raise ValueError("Unknown model: " + opt.model)
 

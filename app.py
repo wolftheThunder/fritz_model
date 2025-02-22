@@ -16,7 +16,6 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.rtcrtpsender import RTCRtpSender
 import openai
 
-from webrtc import HumanPlayer, MediasoupHumanPlayer
 from tensor_rt import TensorRTModel  # Import TensorRT model
 
 nerfreals = {}  

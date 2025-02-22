@@ -6,7 +6,7 @@ import os
 import random
 import argparse
 import threading
-import copy 
+import copy
 import torch.multiprocessing as mp
 
 from aiohttp import web
@@ -16,10 +16,14 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.rtcrtpsender import RTCRtpSender
 import openai
 
-import tensorrt as trt 
+# Ensure TensorRT is imported correctly
+try:
+    import tensorrt as trt
+except ImportError:
+    print("TensorRT is not installed. Please install it if you need to use TensorRT models.")
 
-nerfreals = {}  
-pcs = set()     
+nerfreals = {}
+pcs = set()
 
 latest_llm_reply = {}
 
@@ -32,7 +36,7 @@ def llm_response(message, nerfreal):
     openai.api_key = os.getenv("OPENAI_API_KEY")
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": message}
@@ -41,7 +45,6 @@ def llm_response(message, nerfreal):
             max_tokens=150,
         )
         reply = response.choices[0].message["content"].strip()
-        # Use the session ID from the container's own copy of options.
         session_id = str(nerfreal.opt.sessionid)
         latest_llm_reply[session_id] = reply
         print(f"LLM reply for session {session_id}: {reply}")
@@ -59,9 +62,8 @@ def build_nerfreal(sessionid):
     Build and return a container instance based on the specified model.
     Instead of modifying the global opt, we create a deep copy of it for this session.
     """
-    # Create an independent copy of the options for this session
     session_opt = copy.deepcopy(opt)
-    session_opt.sessionid = sessionid  # Set the session id in the copy
+    session_opt.sessionid = sessionid
 
     if session_opt.model.lower() == 'wav2lip':
         from lipreal import LipReal, load_model, load_avatar, warm_up
@@ -87,7 +89,7 @@ def build_nerfreal(sessionid):
         warm_up(session_opt.max_session, avatar_instance, 160)
         nerfreal = LightReal(session_opt, model_instance, avatar_instance)
     elif session_opt.model.lower() == 'tensorrt':
-        # Initialize TensorRT model
+        from tensor_rt import TensorRTModel  # Ensure TensorRT is imported
         model_instance = TensorRTModel(session_opt.model_path)
         nerfreal = TensorRTModel(session_opt, model_instance)
     else:
@@ -105,22 +107,24 @@ async def offer(request):
         return web.Response(text="-1")
     sessionid = randN(6)
     nerfreals[sessionid] = None
-    # Build the container in an executor thread.
     nerfreal = await asyncio.get_event_loop().run_in_executor(None, build_nerfreal, sessionid)
     nerfreals[sessionid] = nerfreal
 
     pc = RTCPeerConnection()
     pcs.add(pc)
+
     @pc.on("connectionstatechange")
     async def on_state_change():
         if pc.connectionState in ["failed", "closed"]:
             await pc.close()
             pcs.discard(pc)
             nerfreals.pop(sessionid, None)
+
     if opt.transport.lower() == "mediasoup":
         player = MediasoupHumanPlayer(nerfreals[sessionid], opt.mediasoup_url)
     else:
         player = HumanPlayer(nerfreals[sessionid])
+
     pc.addTrack(player.audio)
     pc.addTrack(player.video)
     capabilities = RTCRtpSender.getCapabilities("video")
@@ -150,7 +154,6 @@ async def human(request):
     if params["type"] == "echo" and hasattr(nerfreals[sessionid], "put_msg_txt"):
         nerfreals[sessionid].put_msg_txt(params["text"])
     elif params["type"] == "chat":
-        # Run llm_response in an executor thread.
         await asyncio.get_event_loop().run_in_executor(
             None, llm_response, params["text"], nerfreals[sessionid]
         )

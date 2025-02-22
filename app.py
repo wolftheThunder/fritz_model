@@ -8,7 +8,6 @@ import argparse
 import threading
 import copy
 import torch.multiprocessing as mp
-from BaseReal import BaseASR
 from aiohttp import web
 import aiohttp_cors
 

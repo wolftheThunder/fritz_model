@@ -10,6 +10,7 @@ import copy
 import torch.multiprocessing as mp
 from aiohttp import web
 import aiohttp_cors
+from baseasr import BaseASR
 
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.rtcrtpsender import RTCRtpSender

@@ -237,7 +237,7 @@ if __name__ == "__main__":
                         help="RTMP/RTCPush URL")
     parser.add_argument("--fps", type=int, default=50,
                         help="Frames per second for audio chunk calculation")
-    parser.add_argument("--model_path", type=str, default="./models/wav2lip.pth",
+    parser.add_argument("--model_path", type=str, default="./models/wav2lip.py",
                         help="Path to the model checkpoint file")
     parser.add_argument("--tts", type=str, default="edgetts",
                         help="TTS engine to use: edgetts, gpt-sovits, xtts, cosyvoice, fishtts")

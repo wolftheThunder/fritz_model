@@ -16,7 +16,7 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.rtcrtpsender import RTCRtpSender
 import openai
 
-   import tensorrt as trt  # Import TensorRT model
+import tensorrt as trt 
 
 nerfreals = {}  
 pcs = set()     

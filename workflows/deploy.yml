@@ -1,0 +1,24 @@
+   name: Deploy to VM
+
+   on:
+     push:
+       branches:
+         - main  # Replace 'main' with your branch name
+
+   jobs:
+     deploy:
+       runs-on: ubuntu-latest
+
+       steps:
+       - name: Checkout code
+         uses: actions/checkout@v2
+
+       - name: Deploy to VM
+         uses: appleboy/ssh-action@v0.1.5
+         with:
+           host: ${{ secrets.VM_HOST }}
+           username: ${{ secrets.VM_USER }}
+           key: ${{ secrets.VM_SSH_KEY }}
+           script: |
+             cd ~/fritz_model
+             ./deploy.sh
